@@ -1,45 +1,70 @@
--- [[ TRONWURP GOD MODE TESTER - OPTIMIZED ]]
+-- [[ TRONWURP GOD MODE - FULL BYPASS ]]
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 
--- Global kontrol (Main.lua'dan yönetilir)
-_G.GodModeEnabled = _G.GodModeEnabled or false
+_G.GodModeEnabled = true
 
-local function SecureGodMode()
-    if _G.GodModeConnection then _G.GodModeConnection:Disconnect() end
+-- 1. NETWORKING BYPASS (Sunucu Hasar Paketlerini Reddetme)
+-- getnamecallmethod kullanarak oyundan giden tüm hasar bildirimlerini susturuyoruz.
+local mt = getrawmetatable(game)
+local oldNamecall = mt.__namecall
+setreadonly(mt, false)
 
-    _G.GodModeConnection = RunService.Heartbeat:Connect(function()
-        if not _G.GodModeEnabled then 
-            if _G.GodModeConnection then
-                _G.GodModeConnection:Disconnect()
-                _G.GodModeConnection = nil
+mt.__namecall = newcclosure(function(self, ...)
+    local method = getnamecallmethod()
+    local args = {...}
+
+    if _G.GodModeEnabled and not checkcaller() then
+        -- Yaygın hasar remote isimleri (Bunları buldukça listeye ekle)
+        local blacklist = {"Damage", "TakeDamage", "Hit", "Burn", "Poison", "Explosion", "Kill"}
+        
+        for _, name in pairs(blacklist) do
+            if self.Name:find(name) and (method == "FireServer" or method == "InvokeServer") then
+                return nil -- Paketi sunucuya hiç gönderme
             end
+        end
+    end
+    return oldNamecall(self, ...)
+end)
+
+setreadonly(mt, true)
+
+-- 2. CORE PROTECTION LOOP
+local function ProtectCharacter()
+    if _G.GodModeLoop then _G.GodModeLoop:Disconnect() end
+
+    _G.GodModeLoop = RunService.Heartbeat:Connect(function()
+        if not _G.GodModeEnabled then 
+            _G.GodModeLoop:Disconnect()
             return 
         end
 
         local char = player.Character
-        local humanoid = char and char:FindFirstChildOfClass("Humanoid")
-        
-        if humanoid then
-            -- 1. Client-Side Bypass: Canı sürekli yenile
-            if humanoid.Health > 0 and humanoid.Health < humanoid.MaxHealth then
-                humanoid.Health = humanoid.MaxHealth
-            end
+        if char then
+            local hum = char:FindFirstChildOfClass("Humanoid")
+            if hum then
+                -- State Lockdown: Ölümü reddet
+                hum:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
+                
+                -- Görsel ve mantıksal canı full tut
+                if hum.Health < hum.MaxHealth and hum.Health > 0 then
+                    hum.Health = hum.MaxHealth
+                end
 
-            -- 2. State Protection: Ölüme düşmeyi engelle
-            if humanoid:GetState() == Enum.HumanoidStateType.Dead then
-                humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+                -- Eğer can 0 olursa karakteri ayakta tutmaya çalış
+                if hum:GetState() == Enum.HumanoidStateType.Dead then
+                    hum:ChangeState(Enum.HumanoidStateType.GettingUp)
+                end
             end
         end
     end)
 end
 
--- 3. ANTI-DAMAGE (HRP Lokal Kilitleme)
--- Bazı oyunlarda hasar almamak için karakterin Hitbox'ını anlık olarak kaydırmak işe yarar.
--- Ama en temiz yöntem Remote'u bloklamaktır (Event Logger ile bulduğun Remote'u buraya ekleyebilirsin).
+-- Karakter her doğduğunda korumayı yenile
+player.CharacterAdded:Connect(function()
+    task.wait(1)
+    ProtectCharacter()
+end)
 
-if _G.GodModeEnabled then
-    SecureGodMode()
-    print("🛡️ [GOD MODE]: Active")
-end
+ProtectCharacter()
