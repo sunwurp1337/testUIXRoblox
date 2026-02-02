@@ -146,25 +146,4 @@ Tabs.Settings:AddToggle("EventLogger", {
     end
 })
 
--- [[ UNLOAD SYSTEM: X TUŞUNA BASILDIĞINDA ÇALIŞIR ]]
-Window.Destroyed(function()
-    -- UI Kütüphanesine bağlı olarak 'Destroy' veya 'Unload' event'i
-    -- Tüm global modülleri durdur
-    UI_Active = false
-    _G.KillauraEnabled = false
-    _G.GodModeEnabled = false
-    _G.HunterVisionEnabled = false
-    _G.EventLoggerEnabled = false
-    
-    -- Varsa temizleme fonksiyonlarını çağır
-    if _G.StopEventLogger then _G.StopEventLogger() end
-    
-    -- Bağlantıları (Connections) temizle
-    if _G.KillauraConnection then _G.KillauraConnection:Disconnect() end
-    if _G.GodModeConnection then _G.GodModeConnection:Disconnect() end
-    
-    -- Konsola bilgi ver
-    print("⚠️ " .. Config.BrandName .. " Unloaded. All modules disabled.")
-end)
-
 Window:SelectTab(1)
