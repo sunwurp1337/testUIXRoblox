@@ -100,6 +100,22 @@ local RangeSlider = Tabs.Combat:AddSlider("KillauraRange", {
     end
 })
 
+-- [[ COMBAT: GOD MODE ]]
+Tabs.Combat:AddToggle("GodMode", {
+    Title = "God Mode (Beta)",
+    Description = "Attempts to bypass damage and prevent death.",
+    Default = false,
+    Callback = function(Value)
+        _G.GodModeEnabled = Value
+        if Value then
+            loadstring(game:HttpGet(baseUrl .. "Modules/god-mode.lua"))()
+            Fluent:Notify({Title = "God Mode", Content = "Protection Enabled", Duration = 2})
+        else
+            Fluent:Notify({Title = "God Mode", Content = "Protection Disabled", Duration = 2})
+        end
+    end
+})
+
 --- [[ VISUALS: HUNTER VISION ]] ---
 Tabs.Visuals:AddToggle("HunterVision", {
     Title = "Hunter Vision",
