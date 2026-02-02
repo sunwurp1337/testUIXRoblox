@@ -3,47 +3,56 @@ local Config = {
     GithubUser = "sunwurp1337",
     GithubRepo = "testUIXRoblox",
     Branch = "main",
+    BrandName = "Tronwurp",
+    BrandSuffix = "VIP", -- If empty, it won't show
     Version = "1.0.4"
 }
 
--- Dinamik URL Oluşturucu
+-- Dynamic URL Generator
 local baseUrl = "https://raw.githubusercontent.com/" .. Config.GithubUser .. "/" .. Config.GithubRepo .. "/" .. Config.Branch .. "/"
 
--- [[ UI LIBRARY LOAD (Kendi Repondan Çekiliyor) ]]
+-- Branding Logic (Kırmızı Suffix)
+local TitleString = Config.BrandName
+if Config.BrandSuffix and Config.BrandSuffix ~= "" then
+    TitleString = Config.BrandName .. " <font color='rgb(255, 0, 0)'>" .. Config.BrandSuffix .. "</font>"
+end
+
+-- [[ UI LIBRARY LOAD ]]
 local success, Fluent = pcall(function()
-    -- Artık Core/library.lua'dan çekiyor
     return loadstring(game:HttpGet(baseUrl .. "Core/library.lua"))()
 end)
 
 if not success then
-    warn("Kritik Hata: UI Kütüphanesi " .. Config.GithubRepo .. "/Core/library.lua yolunda bulunamadı!")
+    warn("Critical Error: UI Library not found at " .. Config.GithubRepo .. "/Core/library.lua")
     return
 end
 
 -- [[ WINDOW SETUP ]]
 local Window = Fluent:CreateWindow({
-    Title = Config.GithubRepo .. " Premium",
+    Title = TitleString,
     SubTitle = "v" .. Config.Version .. " | by " .. Config.GithubUser,
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 460),
-    Acrylic = true,
+    Acrylic = true, 
     Theme = "Dark",
     MinimizeKey = Enum.KeyCode.LeftControl
 })
 
--- [[ SEKMELER VE ÖZELLİKLER ]]
+-- [[ TABS AND FEATURES ]]
 local Tabs = {
-    Main = Window:AddTab({ Title = "Ana Menü", Icon = "home" })
+    Main = Window:AddTab({ Title = "Main Menu", Icon = "home" }),
+    Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
 }
 
 Tabs.Main:AddParagraph({
-    Title = "Sistem Durumu: Aktif",
-    Content = "Dosyalar " .. Config.GithubUser .. " reposundan başarıyla çekildi."
+    Title = "System Status: Active",
+    Content = "Files successfully pulled from " .. Config.GithubUser .. "'s repository."
 })
 
--- Örnek Fonksiyon
+-- WalkSpeed Feature
 Tabs.Main:AddSlider("WS", {
-    Title = "Karakter Hızı",
+    Title = "Walk Speed",
+    Description = "Adjust your character's movement speed.",
     Default = 16,
     Min = 16,
     Max = 300,
@@ -55,10 +64,10 @@ Tabs.Main:AddSlider("WS", {
     end
 })
 
--- Bildirim
+-- Notification
 Fluent:Notify({
-    Title = "Yüklendi!",
-    Content = Config.GithubRepo .. " kullanıma hazır.",
+    Title = Config.BrandName .. " Loaded!",
+    Content = "The script is ready to use.",
     Duration = 3
 })
 
