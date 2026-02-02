@@ -2,17 +2,10 @@
 return {
     Metadata = {
         Name = "TRONWURP VIP",
-        Version = "2.2.0",
+        Version = "3.0.0",
     },
     Modules = {
-        Core = {
-            "Manifest", -- Kendini de ekleyebilirsin
-            "Library"
-        },
-        Features = {
-            "Visuals",
-            "Combat",
-            "World"
-        }
+        Core = {"Library"}, -- Manifest zaten yüklü, Library'yi ekledik
+        Features = {"Visuals", "Combat", "World"}
     }
 }
