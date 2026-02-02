@@ -5,7 +5,7 @@ local Config = {
     Branch = "main",
     BrandName = "Tronwurp",
     BrandSuffix = "VIP",
-    Version = "1.0.5"
+    Version = "1.0.5" -- Versiyon güncellendi
 }
 
 local baseUrl = "https://raw.githubusercontent.com/" .. Config.GithubUser .. "/" .. Config.GithubRepo .. "/" .. Config.Branch .. "/"
@@ -35,75 +35,88 @@ local Tabs = {
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
 }
 
---- [[ HOME: UPDATED PROFILE SECTION ]] ---
+--- [[ HOME: PROFILE & PLAYING TIME ]] ---
 local Player = game.Players.LocalPlayer
-local userId = Player.UserId
-local profileImg = "rbxthumb://type=AvatarHeadShot&id=" .. userId .. "&w=150&h=150"
-
--- Profil Fotoğrafı Ekleme
-Tabs.Home:AddImage("PlayerIcon", {
-    Title = "User Avatar",
-    Image = profileImg,
-    Size = UDim2.fromOffset(100, 100)
-})
+local startTime = os.time()
 
 Tabs.Home:AddParagraph({
-    Title = "Welcome, " .. Player.DisplayName,
-    Content = "Username: @" .. Player.Name .. "\nRank: VIP"
+    Title = "Player Profile",
+    Content = "Username: " .. Player.Name .. "\nRank: " .. Config.BrandSuffix .. "\nStatus: Online"
 })
 
 -- Playing Time Düzeltmesi
-local PlayTimeLabel = Tabs.Home:AddParagraph({
-    Title = "Session Tracker",
+local PlayTimeParagraph = Tabs.Home:AddParagraph({
+    Title = "Session Stats",
     Content = "Playing Time: 00:00:00"
 })
 
-local startTime = os.time()
 task.spawn(function()
     while task.wait(1) do
         local seconds = os.time() - startTime
-        local h = math.floor(seconds / 3600)
-        local m = math.floor((seconds % 3600) / 60)
-        local s = seconds % 60
-        local timeStr = string.format("%02d:%02d:%02d", h, m, s)
+        local hours = math.floor(seconds / 3600)
+        local minutes = math.floor((seconds % 3600) / 60)
+        local secs = seconds % 60
+        local displayTime = string.format("%02d:%02d:%02d", hours, minutes, secs)
         
-        -- Bazı Fluent sürümleri için SetTitle veya Content güncelleme
-        PlayTimeLabel:SetDesc("Playing Time: " .. timeStr)
+        -- Fluent kütüphanesinde paragraf güncelleme genellikle SetTitle veya SetDesc ile yapılır.
+        -- Eğer SetDesc çalışmazsa kütüphaneye göre 'Content' alanı güncellenir.
+        PlayTimeParagraph:SetDesc("Playing Time: " .. displayTime)
     end
 end)
 
---- [[ MODULES WITH TOGGLE-OFF LOGIC ]] ---
+--- [[ MODULES LOGIC ]] ---
+-- Modülleri kapatmak için kullanılan tablo
+local RunningModules = {}
 
--- Yardımcı Fonksiyon: Modül Kapatıldığında Aksiyon Al
-local function HandleModule(name, state, path)
+local function HandleModule(name, url, state)
     if state then
-        -- Modülü Çalıştır
-        loadstring(game:HttpGet(baseUrl .. "Modules/" .. path))()
-        Fluent:Notify({Title = name, Content = "Enabled", Duration = 2})
+        -- Modülü başlat
+        local scriptRaw = game:HttpGet(url)
+        local func, err = loadstring(scriptRaw)
+        if func then
+            RunningModules[name] = func() -- Modülün durdurma fonksiyonu döndürdüğünü varsayar
+            Fluent:Notify({Title = name, Content = "Activated", Duration = 2})
+        else
+            warn("Module Error: " .. err)
+        end
     else
-        -- Modül Kapatıldığında: 
-        -- Not: Modülün içindeki threadleri durdurmak için modülün global bir tabloya (örn: _G.Modules) kayıtlı olması önerilir.
-        -- Şimdilik sadece bildirim ve genel temizlik yapıyoruz.
-        Fluent:Notify({Title = name, Content = "Disabled - Features Stopped", Duration = 2})
+        -- Modülü kapatma mantığı
+        -- Not: Modül dosyanızın içinde bir 'stop' mekanizması yoksa karakteri resetlemek en temiz yoldur.
+        Fluent:Notify({Title = name, Content = "Deactivated. Some effects may require reset.", Duration = 3})
+        RunningModules[name] = nil
+        
+        -- Eğer modül killaura veya ESP ise karakteri temizlemek gerekebilir:
+        if name == "Killaura" or name == "Hunter Vision" then
+             -- Buraya modüle özel kapatma kodları (örn: ESP:Destroy()) eklenmelidir.
+        end
     end
 end
 
+-- COMBAT
 Tabs.Combat:AddToggle("Killaura", {
     Title = "Self-Back Killaura",
     Default = false,
-    Callback = function(v) HandleModule("Killaura", v, "self-back-killaura.lua") end
+    Callback = function(Value)
+        HandleModule("Killaura", baseUrl .. "Modules/self-back-killaura.lua", Value)
+    end
 })
 
+-- VISUALS
 Tabs.Visuals:AddToggle("HunterVision", {
     Title = "Tronwurp Hunter Vision",
     Default = false,
-    Callback = function(v) HandleModule("HunterVision", v, "tronwurp-hunter-vision.lua") end
+    Callback = function(Value)
+        HandleModule("Hunter Vision", baseUrl .. "Modules/tronwurp-hunter-vision.lua", Value)
+    end
 })
 
+-- SETTINGS
 Tabs.Settings:AddToggle("EventLogger", {
     Title = "Event Logger",
     Default = false,
-    Callback = function(v) HandleModule("EventLogger", v, "event-logger.lua") end
+    Callback = function(Value)
+        HandleModule("Event Logger", baseUrl .. "Modules/event-logger.lua", Value)
+    end
 })
 
 Window:SelectTab(1)
