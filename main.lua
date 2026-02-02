@@ -3,22 +3,27 @@ local Config = {
     GithubUser = "sunwurp1337",
     GithubRepo = "testUIXRoblox",
     Branch = "main",
-    Version = "1.0.3"
+    Version = "1.0.4"
 }
 
--- [[ UI LIBRARY LOAD (Fluent) ]]
+-- Dinamik URL Oluşturucu
+local baseUrl = "https://raw.githubusercontent.com/" .. Config.GithubUser .. "/" .. Config.GithubRepo .. "/" .. Config.Branch .. "/"
+
+-- [[ UI LIBRARY LOAD (Kendi Repondan Çekiliyor) ]]
 local success, Fluent = pcall(function()
-    return loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+    -- Artık Core/library.lua'dan çekiyor
+    return loadstring(game:HttpGet(baseUrl .. "Core/library.lua"))()
 end)
 
 if not success then
-    warn("UI Library yuklenemedi! İnternet baglantinizi kontrol edin.")
+    warn("Kritik Hata: UI Kütüphanesi " .. Config.GithubRepo .. "/Core/library.lua yolunda bulunamadı!")
     return
 end
 
+-- [[ WINDOW SETUP ]]
 local Window = Fluent:CreateWindow({
-    Title = Config.GithubRepo .. " | " .. Config.Version,
-    SubTitle = "by " .. Config.GithubUser,
+    Title = Config.GithubRepo .. " Premium",
+    SubTitle = "v" .. Config.Version .. " | by " .. Config.GithubUser,
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 460),
     Acrylic = true,
@@ -26,22 +31,22 @@ local Window = Fluent:CreateWindow({
     MinimizeKey = Enum.KeyCode.LeftControl
 })
 
--- Sekmeler
+-- [[ SEKMELER VE ÖZELLİKLER ]]
 local Tabs = {
     Main = Window:AddTab({ Title = "Ana Menü", Icon = "home" })
 }
 
 Tabs.Main:AddParagraph({
-    Title = "Sistem Aktif",
-    Content = "Kullanıcı: " .. Config.GithubUser .. "\nRepo: " .. Config.GithubRepo
+    Title = "Sistem Durumu: Aktif",
+    Content = "Dosyalar " .. Config.GithubUser .. " reposundan başarıyla çekildi."
 })
 
--- Örnek bir hız artırıcı
+-- Örnek Fonksiyon
 Tabs.Main:AddSlider("WS", {
-    Title = "Yürüme Hızı",
+    Title = "Karakter Hızı",
     Default = 16,
     Min = 16,
-    Max = 250,
+    Max = 300,
     Rounding = 1,
     Callback = function(Value)
         if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
@@ -50,8 +55,11 @@ Tabs.Main:AddSlider("WS", {
     end
 })
 
+-- Bildirim
 Fluent:Notify({
-    Title = "SunWurp UI",
-    Content = "Script başarıyla yüklendi!",
-    Duration = 5
+    Title = "Yüklendi!",
+    Content = Config.GithubRepo .. " kullanıma hazır.",
+    Duration = 3
 })
+
+Window:SelectTab(1)
