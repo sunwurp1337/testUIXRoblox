@@ -59,19 +59,22 @@ task.spawn(function()
     end
 end)
 
---- [[ COMBAT: KILLAURA ]] ---
-_G.KillauraRange = 50 -- Varsayılan mesafe
-
+-- COMBAT: KILLAURA
 local KillauraToggle = Tabs.Combat:AddToggle("Killaura", {
     Title = "Self-Back Killaura",
     Description = "Teleports behind nearest target and attacks.",
     Default = false,
     Callback = function(Value)
         _G.KillauraEnabled = Value
+        
         if Value then
-            loadstring(game:HttpGet(baseUrl .. "Modules/self-back-killaura.lua"))()
+            -- Modülü her seferinde temiz bir şekilde çağır
+            task.spawn(function()
+                loadstring(game:HttpGet(baseUrl .. "Modules/self-back-killaura.lua"))()
+            end)
             Fluent:Notify({Title = "Killaura", Content = "Activated!", Duration = 2})
         else
+            -- Bağlantıyı koparmak için modül içindeki kontrolü tetikle
             Fluent:Notify({Title = "Killaura", Content = "Deactivated!", Duration = 2})
         end
     end
