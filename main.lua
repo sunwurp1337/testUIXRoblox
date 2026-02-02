@@ -184,5 +184,3 @@ Window:OnUnload(function()
 end)
 
 Window:SelectTab(1)
-
-Window:SelectTab(1)
