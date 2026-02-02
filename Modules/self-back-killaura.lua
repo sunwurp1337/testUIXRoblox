@@ -1,4 +1,4 @@
--- [[ TRONWURP SELF-BACK KILLAURA - FIXED PERFORMANCE ]]
+-- [[ TRONWURP SELF-BACK KILLAURA - FIXED ]]
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -10,20 +10,19 @@ local lastAttackTime = 0
 
 local function GetNearestTarget()
     local nearest = nil
-    local shortestDistance = _G.KillauraRange or 50
     
-    -- GetDescendants yerine GetChildren kullanarak kasmayı engelliyoruz.
-    -- Bu, sadece haritanın en üst katmanındaki modelleri tarar.
-    for _, obj in pairs(workspace:GetChildren()) do
-        if obj:IsA("Model") and obj ~= player.Character then
-            local root = obj:FindFirstChild("HumanoidRootPart")
-            if root then
-                local distance = (player.Character.HumanoidRootPart.Position - root.Position).Magnitude
-                
-                if distance < shortestDistance then
-                    shortestDistance = distance
-                    nearest = root
-                end
+    -- ÖNCELİK SIRASI: 1. Global Slider Değeri | 2. Varsayılan 50
+    local shortestDistance = _G.KillauraRange
+    
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if obj:IsA("Model") and obj ~= player.Character and obj:FindFirstChild("HumanoidRootPart") then
+            local root = obj.HumanoidRootPart
+            local distance = (player.Character.HumanoidRootPart.Position - root.Position).Magnitude
+            
+            -- Mesafe kontrolü
+            if distance < shortestDistance then
+                shortestDistance = distance
+                nearest = root
             end
         end
     end
