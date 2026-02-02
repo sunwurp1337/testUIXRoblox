@@ -146,41 +146,39 @@ Tabs.Settings:AddToggle("EventLogger", {
     end
 })
 
--- [[ UNLOAD SYSTEM ]]
--- Fluent kütüphanesinde pencere kapandığında otomatik çalışan fonksiyon
-Window:OnUnload(function()
-    -- 1. Tüm döngüleri durdurmak için global değişkenleri kapat
-    _G.KillauraEnabled = false
-    _G.GodModeEnabled = false
-    _G.HunterVisionEnabled = false
-    _G.EventLoggerEnabled = false
-    UI_Active = false -- Oynama süresi döngüsü için
-    
-    -- 2. Aktif bağlantıları (Connections) kopar
-    if _G.KillauraConnection then 
-        _G.KillauraConnection:Disconnect() 
-        _G.KillauraConnection = nil
-    end
-    
-    if _G.GodModeConnection then 
-        _G.GodModeConnection:Disconnect() 
-        _G.GodModeConnection = nil
-    end
-    
-    if _G.LoggerConnections then
-        for _, conn in pairs(_G.LoggerConnections) do
-            if conn then conn:Disconnect() end
-        end
-        _G.LoggerConnections = nil
-    end
+-- [[ KESİN KAPATMA SİSTEMİ (WATCHER) ]]
+task.spawn(function()
+    -- Fluent kütüphanesinin oluşturduğu ScreenGui'yi buluyoruz
+    local CoreGui = game:GetService("CoreGui")
+    local ScreenGui = CoreGui:FindFirstChild("FluentGui") or CoreGui:FindFirstChild("ScreenGui") -- Kütüphaneye göre değişebilir
 
-    -- 3. Varsa özel durdurma fonksiyonlarını çağır
-    if _G.StopEventLogger then _G.StopEventLogger() end
+    if ScreenGui then
+        -- Eğer ScreenGui silinirse (X tuşu buna sebep olur)
+        ScreenGui.AncestryChanged:Connect(function(_, parent)
+            if not parent then
+                -- 1. Tüm modül değişkenlerini kapat
+                _G.KillauraEnabled = false
+                _G.GodModeEnabled = false
+                _G.HunterVisionEnabled = false
+                _G.EventLoggerEnabled = false
+                
+                -- 2. Aktif bağlantıları kopar
+                if _G.KillauraConnection then _G.KillauraConnection:Disconnect() end
+                if _G.GodModeConnection then _G.GodModeConnection:Disconnect() end
+                if _G.HunterLoop then _G.HunterLoop:Disconnect() end -- Hunter Vision için
+                
+                -- 3. Varsa logger bağlantılarını temizle
+                if _G.LoggerConnections then
+                    for _, conn in pairs(_G.LoggerConnections) do
+                        if conn then conn:Disconnect() end
+                    end
+                end
 
-    -- 4. Temizlik bildirimi
-    print("--- [TRONWURP] ---")
-    print("All modules have been successfully disabled.")
-    print("UI Unloaded.")
+                -- 4. Konsola geri bildirim ver
+                warn("!!! " .. Config.BrandName .. " kapandı ve tüm modüller durduruldu !!!")
+            end
+        end)
+    end
 end)
 
 Window:SelectTab(1)
