@@ -2,4 +2,5 @@
 -- Do not edit by hand. Your changes will be overwritten.
 
 return {
+    "Core/Global.lua",
 }
