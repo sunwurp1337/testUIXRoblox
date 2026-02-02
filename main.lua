@@ -146,39 +146,4 @@ Tabs.Settings:AddToggle("EventLogger", {
     end
 })
 
--- [[ KESİN KAPATMA SİSTEMİ (WATCHER) ]]
-task.spawn(function()
-    -- Fluent kütüphanesinin oluşturduğu ScreenGui'yi buluyoruz
-    local CoreGui = game:GetService("CoreGui")
-    local ScreenGui = CoreGui:FindFirstChild("FluentGui") or CoreGui:FindFirstChild("ScreenGui") -- Kütüphaneye göre değişebilir
-
-    if ScreenGui then
-        -- Eğer ScreenGui silinirse (X tuşu buna sebep olur)
-        ScreenGui.AncestryChanged:Connect(function(_, parent)
-            if not parent then
-                -- 1. Tüm modül değişkenlerini kapat
-                _G.KillauraEnabled = false
-                _G.GodModeEnabled = false
-                _G.HunterVisionEnabled = false
-                _G.EventLoggerEnabled = false
-                
-                -- 2. Aktif bağlantıları kopar
-                if _G.KillauraConnection then _G.KillauraConnection:Disconnect() end
-                if _G.GodModeConnection then _G.GodModeConnection:Disconnect() end
-                if _G.HunterLoop then _G.HunterLoop:Disconnect() end -- Hunter Vision için
-                
-                -- 3. Varsa logger bağlantılarını temizle
-                if _G.LoggerConnections then
-                    for _, conn in pairs(_G.LoggerConnections) do
-                        if conn then conn:Disconnect() end
-                    end
-                end
-
-                -- 4. Konsola geri bildirim ver
-                warn("!!! " .. Config.BrandName .. " kapandı ve tüm modüller durduruldu !!!")
-            end
-        end)
-    end
-end)
-
 Window:SelectTab(1)
