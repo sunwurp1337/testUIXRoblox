@@ -5,15 +5,18 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local player = Players.LocalPlayer
 
 -- Configuration
-local ATTACK_SPEED = 0.25 
+local RANGE = 50
+local ATTACK_SPEED = 1 
 local ATTACK_REMOTE = ReplicatedStorage:FindFirstChild("CharactersAttackRemote")
+
 local lastAttackTime = 0
 
 -- 1. FIND NEAREST TARGET
+-- 1. FIND NEAREST TARGET
 local function GetNearestTarget()
     local nearest = nil
-    -- RANGE artık dinamik: Main.lua'daki slider'dan gelen değeri okur, yoksa 50 kullanır.
-    local shortestDistance = _G.KillauraRange or 50
+    -- Eğer _G.KillauraRange varsa onu kullan, yoksa varsayılan olarak 50 al:
+    local shortestDistance = _G.KillauraRange or RANGE
     
     -- Optimized search
     for _, obj in pairs(workspace:GetDescendants()) do
@@ -35,12 +38,9 @@ local function StartAura()
     if _G.KillauraConnection then _G.KillauraConnection:Disconnect() end
 
     _G.KillauraConnection = RunService.RenderStepped:Connect(function()
-        -- Toggle kontrolü
         if not _G.KillauraEnabled then 
-            if _G.KillauraConnection then
-                _G.KillauraConnection:Disconnect()
-                _G.KillauraConnection = nil
-            end
+            _G.KillauraConnection:Disconnect()
+            _G.KillauraConnection = nil
             return 
         end
 
@@ -49,6 +49,7 @@ local function StartAura()
             
             if targetRoot then
                 -- POSITIONING: Behind the target
+                -- CFrame.new(0, 1, 3) -> 3 studs back, 1 stud up
                 local followPos = targetRoot.CFrame * CFrame.new(0, 1, 3)
                 player.Character.HumanoidRootPart.CFrame = CFrame.lookAt(followPos.p, targetRoot.Position)
                 
@@ -69,7 +70,6 @@ if _G.KillauraEnabled then
     StartAura()
 end
 
--- Return cleanup function
 return function()
     if _G.KillauraConnection then
         _G.KillauraConnection:Disconnect()
