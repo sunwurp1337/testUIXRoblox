@@ -146,4 +146,43 @@ Tabs.Settings:AddToggle("EventLogger", {
     end
 })
 
+-- [[ UNLOAD SYSTEM ]]
+-- Fluent kütüphanesinde pencere kapandığında otomatik çalışan fonksiyon
+Window:OnUnload(function()
+    -- 1. Tüm döngüleri durdurmak için global değişkenleri kapat
+    _G.KillauraEnabled = false
+    _G.GodModeEnabled = false
+    _G.HunterVisionEnabled = false
+    _G.EventLoggerEnabled = false
+    UI_Active = false -- Oynama süresi döngüsü için
+    
+    -- 2. Aktif bağlantıları (Connections) kopar
+    if _G.KillauraConnection then 
+        _G.KillauraConnection:Disconnect() 
+        _G.KillauraConnection = nil
+    end
+    
+    if _G.GodModeConnection then 
+        _G.GodModeConnection:Disconnect() 
+        _G.GodModeConnection = nil
+    end
+    
+    if _G.LoggerConnections then
+        for _, conn in pairs(_G.LoggerConnections) do
+            if conn then conn:Disconnect() end
+        end
+        _G.LoggerConnections = nil
+    end
+
+    -- 3. Varsa özel durdurma fonksiyonlarını çağır
+    if _G.StopEventLogger then _G.StopEventLogger() end
+
+    -- 4. Temizlik bildirimi
+    print("--- [TRONWURP] ---")
+    print("All modules have been successfully disabled.")
+    print("UI Unloaded.")
+end)
+
+Window:SelectTab(1)
+
 Window:SelectTab(1)
