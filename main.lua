@@ -60,7 +60,7 @@ task.spawn(function()
 end)
 
 -- [[ COMBAT: KILLAURA ]]
-_G.KillauraRange = 50 -- KESİN BAŞLANGIÇ DEĞERİ (Algılama sorunu için)
+_G.KillauraRange = 0 -- Başlangıç değeri 0
 
 local KillauraToggle = Tabs.Combat:AddToggle("Killaura", {
     Title = "Self-Back Killaura",
@@ -91,19 +91,14 @@ Tabs.Combat:AddKeybind("KillauraKeybind", {
 local RangeSlider = Tabs.Combat:AddSlider("KillauraRange", {
     Title = "Killaura Range",
     Description = "Adjust target detection distance.",
-    Default = 50,
-    Min = 10,
+    Default = 0, -- Başlangıç 0
+    Min = 0,
     Max = 500,
     Rounding = 1,
     Callback = function(Value)
         _G.KillauraRange = Value
     end
 })
-
-RangeSlider:OnChanged(function(Value)
-    _G.KillauraRange = Value
-end)
-RangeSlider:SetValue(50) -- Bu satır Callback'i zorla çalıştırır
 
 --- [[ VISUALS: HUNTER VISION ]] ---
 Tabs.Visuals:AddToggle("HunterVision", {
