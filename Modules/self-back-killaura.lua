@@ -1,65 +1,57 @@
--- [[ TRONWURP SELF-BACK - COS ULTIMATE ALGORITHM ]]
+-- [[ TRONWURP SELF-BACK KILLAURA - FIXED PERFORMANCE ]]
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local player = Players.LocalPlayer
 
-local CurrentTarget = nil
+local ATTACK_SPEED = 1
+local ATTACK_REMOTE = ReplicatedStorage:FindFirstChild("CharactersAttackRemote")
+local lastAttackTime = 0
 
--- 1. HEDEF BULMA (CoS Karakter Yapısına Göre Optimize Edildi)
-task.spawn(function()
-    while true do
-        if _G.KillauraEnabled then
-            local nearest = nil
-            local shortestDistance = _G.KillauraRange or 100
-            local myChar = player.Character
-            local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
-
-            if myRoot then
-                -- CoS karakterleri genellikle workspace içinde 'Live' veya belirli klasörlerde toplanır.
-                -- GetDescendants yerine daha geniş kapsamlı ama kontrollü bir tarama yapıyoruz.
-                for _, v in pairs(workspace:GetDescendants()) do
-                    -- CoS yaratıklarını ayırt etmek için: Model olmalı + Humanoid içermeli + Bizim karakterimiz olmamalı
-                    if v:IsA("Model") and v ~= myChar and v:FindFirstChildOfClass("Humanoid") then
-                        local targetRoot = v:FindFirstChild("HumanoidRootPart") or v.PrimaryPart
-                        
-                        if targetRoot then
-                            local distance = (myRoot.Position - targetRoot.Position).Magnitude
-                            if distance < shortestDistance then
-                                shortestDistance = distance
-                                nearest = targetRoot
-                            end
-                        end
-                    end
-                    
-                    -- Her 250 objede bir milisaniyelik ara ver (Kasmayı %100 keser)
-                    if _ % 250 == 0 then task.wait() end
+local function GetNearestTarget()
+    local nearest = nil
+    local shortestDistance = _G.KillauraRange or 50
+    
+    -- GetDescendants yerine GetChildren kullanarak kasmayı engelliyoruz.
+    -- Bu, sadece haritanın en üst katmanındaki modelleri tarar.
+    for _, obj in pairs(workspace:GetChildren()) do
+        if obj:IsA("Model") and obj ~= player.Character then
+            local root = obj:FindFirstChild("HumanoidRootPart")
+            if root then
+                local distance = (player.Character.HumanoidRootPart.Position - root.Position).Magnitude
+                
+                if distance < shortestDistance then
+                    shortestDistance = distance
+                    nearest = root
                 end
             end
-            CurrentTarget = nearest
-        else
-            CurrentTarget = nil
         end
-        task.wait(0.3) -- Tarama sıklığı (FPS dostu)
     end
-end)
+    return nearest
+end
 
--- 2. IŞINLANMA DÖNGÜSÜ
 if _G.KillauraConnection then _G.KillauraConnection:Disconnect() end
 
-_G.KillauraConnection = RunService.Heartbeat:Connect(function()
-    -- Kapatma kontrolü
+_G.KillauraConnection = RunService.RenderStepped:Connect(function()
     if not _G.KillauraEnabled then 
-        if _G.KillauraConnection then
-            _G.KillauraConnection:Disconnect()
-            _G.KillauraConnection = nil
-        end
+        _G.KillauraConnection:Disconnect()
+        _G.KillauraConnection = nil
         return 
     end
 
-    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") and CurrentTarget then
-        -- CoS yaratıkları devasa olabildiği için takip mesafesini ve yüksekliğini artırdık
-        -- 0: Yatay, 8: Yükseklik, 25: Arka mesafe (Sıkışmayı önler)
-        local followPos = CurrentTarget.CFrame * CFrame.new(0, 8, 25)
-        player.Character.HumanoidRootPart.CFrame = CFrame.lookAt(followPos.Position, CurrentTarget.Position)
+    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        local targetRoot = GetNearestTarget()
+        
+        if targetRoot then
+            local followPos = targetRoot.CFrame * CFrame.new(0, 1, 15)
+            player.Character.HumanoidRootPart.CFrame = CFrame.lookAt(followPos.p, targetRoot.Position)
+            
+            if tick() - lastAttackTime >= ATTACK_SPEED then
+                if ATTACK_REMOTE then
+                    ATTACK_REMOTE:FireServer(targetRoot.Parent) 
+                    lastAttackTime = tick()
+                end
+            end
+        end
     end
 end)
