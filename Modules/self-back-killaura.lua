@@ -1,15 +1,18 @@
+-- [[ TRONWURP SELF-BACK KILLAURA - DYNAMIC RANGE ]]
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local player = Players.LocalPlayer
 
+-- Configuration
 local ATTACK_SPEED = 0.25 
 local ATTACK_REMOTE = ReplicatedStorage:FindFirstChild("CharactersAttackRemote")
 local lastAttackTime = 0
 
+-- 1. FIND NEAREST TARGET (Dinamik Range)
 local function GetNearestTarget()
     local nearest = nil
-    -- _G.KillauraRange kullanarak dinamik menzil alıyoruz
+    -- Main.lua'daki slider'dan gelen değeri kullan, yoksa varsayılan 50
     local shortestDistance = _G.KillauraRange or 50
     
     for _, obj in pairs(workspace:GetDescendants()) do
@@ -25,26 +28,37 @@ local function GetNearestTarget()
     return nearest
 end
 
-if _G.KillauraConnection then _G.KillauraConnection:Disconnect() end
+-- 2. KILL AURA LOOP
+local function StartAura()
+    if _G.KillauraConnection then _G.KillauraConnection:Disconnect() end
 
-_G.KillauraConnection = RunService.RenderStepped:Connect(function()
-    if not _G.KillauraEnabled then 
-        _G.KillauraConnection:Disconnect()
-        return 
-    end
+    _G.KillauraConnection = RunService.RenderStepped:Connect(function()
+        if not _G.KillauraEnabled then 
+            _G.KillauraConnection:Disconnect()
+            _G.KillauraConnection = nil
+            return 
+        end
 
-    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-        local targetRoot = GetNearestTarget()
-        if targetRoot then
-            local followPos = targetRoot.CFrame * CFrame.new(0, 1, 3)
-            player.Character.HumanoidRootPart.CFrame = CFrame.lookAt(followPos.p, targetRoot.Position)
+        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local targetRoot = GetNearestTarget()
             
-            if tick() - lastAttackTime >= ATTACK_SPEED then
-                if ATTACK_REMOTE then
-                    ATTACK_REMOTE:FireServer(targetRoot.Parent) 
-                    lastAttackTime = tick()
+            if targetRoot then
+                -- Arkasına ışınlanma pozisyonu
+                local followPos = targetRoot.CFrame * CFrame.new(0, 1, 3)
+                player.Character.HumanoidRootPart.CFrame = CFrame.lookAt(followPos.p, targetRoot.Position)
+                
+                -- Saldırı tetikleme
+                if tick() - lastAttackTime >= ATTACK_SPEED then
+                    if ATTACK_REMOTE then
+                        ATTACK_REMOTE:FireServer(targetRoot.Parent) 
+                        lastAttackTime = tick()
+                    end
                 end
             end
         end
-    end
-end)
+    end)
+end
+
+if _G.KillauraEnabled then
+    StartAura()
+end

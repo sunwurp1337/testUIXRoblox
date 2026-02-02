@@ -23,12 +23,11 @@ local Window = Fluent:CreateWindow({
     SubTitle = "v" .. Config.Version .. " | by " .. Config.GithubUser,
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 460),
-    Acrylic = false, -- Ekran ortasındaki blur hatası düzeltildi
+    Acrylic = false,
     Theme = "Dark",
     MinimizeKey = Enum.KeyCode.LeftControl
 })
 
--- [[ TABS ]]
 local Tabs = {
     Home = Window:AddTab({ Title = "Home", Icon = "home" }),
     Combat = Window:AddTab({ Title = "Combat", Icon = "swords" }),
@@ -36,7 +35,7 @@ local Tabs = {
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
 }
 
---- [[ HOME: PROFILE SECTION ]] ---
+--- [[ HOME SECTION ]] ---
 local Player = game.Players.LocalPlayer
 local startTime = os.time()
 
@@ -45,7 +44,7 @@ Tabs.Home:AddParagraph({
     Content = "Username: " .. Player.Name .. "\nRank: " .. Config.BrandSuffix .. "\nStatus: Online"
 })
 
-local PlayTimeLabel = Tabs.Home:AddParagraph({
+local PlayTimeParagraph = Tabs.Home:AddParagraph({
     Title = "Session Stats",
     Content = "Playing Time: 00:00:00"
 })
@@ -56,34 +55,29 @@ task.spawn(function()
         local hours = math.floor(seconds / 3600)
         local minutes = math.floor((seconds % 3600) / 60)
         local secs = seconds % 60
-        PlayTimeLabel:SetDesc("Playing Time: " .. string.format("%02d:%02d:%02d", hours, minutes, secs))
+        PlayTimeParagraph:SetDesc("Playing Time: " .. string.format("%02d:%02d:%02d", hours, minutes, secs))
     end
 end)
 
---- [[ COMBAT SECTION: KILLAURA ]] ---
-_G.KillauraRange = 50 -- Default range
-
-Tabs.Combat:AddParagraph({
-    Title = "Killaura Module",
-    Content = "Automates attacks by teleporting you behind targets."
-})
+--- [[ COMBAT: KILLAURA ]] ---
+_G.KillauraRange = 50 -- Varsayılan mesafe
 
 local KillauraToggle = Tabs.Combat:AddToggle("Killaura", {
     Title = "Self-Back Killaura",
-    Description = "Enable/Disable the automatic combat system.",
+    Description = "Teleports behind nearest target and attacks.",
     Default = false,
     Callback = function(Value)
         _G.KillauraEnabled = Value
         if Value then
             loadstring(game:HttpGet(baseUrl .. "Modules/self-back-killaura.lua"))()
-            Fluent:Notify({Title = "Killaura", Content = "Activated", Duration = 2})
+            Fluent:Notify({Title = "Killaura", Content = "Activated!", Duration = 2})
         else
-            Fluent:Notify({Title = "Killaura", Content = "Deactivated", Duration = 2})
+            Fluent:Notify({Title = "Killaura", Content = "Deactivated!", Duration = 2})
         end
     end
 })
 
-Tabs.Combat:AddKeybind("KillauraKey", {
+Tabs.Combat:AddKeybind("KillauraKeybind", {
     Title = "Killaura Hotkey",
     Mode = "Toggle",
     Default = "G",
@@ -92,9 +86,10 @@ Tabs.Combat:AddKeybind("KillauraKey", {
     end
 })
 
+-- Menzil Ayarı (Range Slider)
 Tabs.Combat:AddSlider("KillauraRange", {
-    Title = "Attack Range",
-    Description = "Adjust how far the aura detects targets.",
+    Title = "Killaura Range",
+    Description = "Adjust target detection distance.",
     Default = 50,
     Min = 10,
     Max = 200,
@@ -104,23 +99,23 @@ Tabs.Combat:AddSlider("KillauraRange", {
     end
 })
 
---- [[ VISUALS SECTION ]] ---
+--- [[ VISUALS: HUNTER VISION ]] ---
 Tabs.Visuals:AddToggle("HunterVision", {
     Title = "Hunter Vision",
-    Description = "Advanced ESP that detects hidden and invisible players.",
+    Description = "ESP and invisibility detection.",
     Default = false,
     Callback = function(Value)
         _G.HunterVisionEnabled = Value
         if Value then
-            loadstring(game:HttpGet(baseUrl .. "Modules/tronwurp-hunter-vision.lua"))()
+            loadstring(game:HttpGet(baseUrl .. "Modules/hunter-vision.lua"))()
         end
     end
 })
 
---- [[ SETTINGS SECTION ]] ---
+--- [[ SETTINGS: EVENT LOGGER ]] ---
 Tabs.Settings:AddToggle("EventLogger", {
     Title = "Event Logger",
-    Description = "Logs all RemoteEvent traffic to the console for debugging.",
+    Description = "Logs remote events to console.",
     Default = false,
     Callback = function(Value)
         _G.EventLoggerEnabled = Value
