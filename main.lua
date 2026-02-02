@@ -101,12 +101,20 @@ Tabs.Combat:AddToggle("Killaura", {
     end
 })
 
--- VISUALS
+-- VISUALS: Hunter Vision
 Tabs.Visuals:AddToggle("HunterVision", {
-    Title = "Tronwurp Hunter Vision",
+    Title = "Hunter Vision",
     Default = false,
     Callback = function(Value)
-        HandleModule("Hunter Vision", baseUrl .. "Modules/tronwurp-hunter-vision.lua", Value)
+        _G.HunterVisionEnabled = Value -- Loop kontrolü
+        
+        if Value then
+            loadstring(game:HttpGet(baseUrl .. "Modules/hunter-vision.lua"))()
+            Fluent:Notify({Title = "Visuals", Content = "Hunter Vision Enabled", Duration = 2})
+        else
+            -- Modül loopu _G.HunterVisionEnabled false olunca otomatik durur ve CleanESP çalışır.
+            Fluent:Notify({Title = "Visuals", Content = "Hunter Vision Disabled", Duration = 2})
+        end
     end
 })
 
