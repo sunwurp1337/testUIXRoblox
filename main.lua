@@ -49,7 +49,7 @@ local Tabs = {
 
 -- Home Tab İçeriği
 Tabs.Home:AddParagraph({
-    Title = "System Status: Active",
+    Title = "System Status: Active!",
     Content = "Files successfully pulled from " .. Config.GithubUser .. "'s repository."
 })
 
