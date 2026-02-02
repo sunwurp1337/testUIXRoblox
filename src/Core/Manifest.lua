@@ -3,4 +3,5 @@
 
 return {
     "Core/Global.lua",
+    "Init.lua",
 }
