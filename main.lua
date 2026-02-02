@@ -4,14 +4,14 @@ local Config = {
     GithubRepo = "testUIXRoblox",
     Branch = "main",
     BrandName = "Tronwurp",
-    BrandSuffix = "VIP", -- If empty, it won't show
+    BrandSuffix = "VIP",
     Version = "1.0.4"
 }
 
 -- Dynamic URL Generator
 local baseUrl = "https://raw.githubusercontent.com/" .. Config.GithubUser .. "/" .. Config.GithubRepo .. "/" .. Config.Branch .. "/"
 
--- Branding Logic (Kırmızı Suffix)
+-- Branding Logic
 local TitleString = Config.BrandName
 if Config.BrandSuffix and Config.BrandSuffix ~= "" then
     TitleString = Config.BrandName .. " <font color='rgb(255, 0, 0)'>" .. Config.BrandSuffix .. "</font>"
@@ -38,32 +38,80 @@ local Window = Fluent:CreateWindow({
     MinimizeKey = Enum.KeyCode.LeftControl
 })
 
--- [[ TABS AND FEATURES ]]
+-- [[ TABS ]]
 local Tabs = {
-    -- İstediğin Tab Değişiklikleri Buradadır:
     Home = Window:AddTab({ Title = "Home", Icon = "home" }),
     Combat = Window:AddTab({ Title = "Combat", Icon = "swords" }),
     Visuals = Window:AddTab({ Title = "Visuals", Icon = "eye" }),
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
 }
 
--- Home Tab İçeriği
+--- [[ HOME: PROFILE SECTION ]] ---
+local Player = game.Players.LocalPlayer
+local userId = Player.UserId
+local thumbType = Enum.ThumbnailType.HeadShot
+local thumbSize = Enum.ThumbnailSize.Size100x100
+local content, isReady = game.Players:GetUserThumbnailAsync(userId, thumbType, thumbSize)
+
+local startTime = os.time()
+
+-- Profil Bilgileri
 Tabs.Home:AddParagraph({
-    Title = "System Status: Active!",
-    Content = "Files successfully pulled from " .. Config.GithubUser .. "'s repository."
+    Title = "Player Profile",
+    Content = string.format(
+        "Username: %s\nRank: VIP\nStatus: Online",
+        Player.Name
+    )
 })
 
--- Örnek: WalkSpeed Feature (Artık Home tabında)
-Tabs.Home:AddSlider("WS", {
-    Title = "Walk Speed",
-    Description = "Adjust your character's movement speed.",
-    Default = 16,
-    Min = 16,
-    Max = 300,
-    Rounding = 1,
+-- Oynama Süresi (Dinamik güncelleme için paragrafı değişkene atıyoruz)
+local PlayTimeLabel = Tabs.Home:AddParagraph({
+    Title = "Session Stats",
+    Content = "Playing Time: 00:00:00"
+})
+
+-- Oynama süresini arka planda güncelleyen döngü
+task.spawn(function()
+    while task.wait(1) do
+        local seconds = os.time() - startTime
+        local minutes = math.floor(seconds / 60)
+        local hours = math.floor(minutes / 60)
+        local displayTime = string.format("%02d:%02d:%02d", hours % 24, minutes % 60, seconds % 60)
+        PlayTimeLabel:SetDesc("Playing Time: " + displayTime)
+    end
+end)
+
+--- [[ MODULES INTEGRATION ]] ---
+
+-- COMBAT: Self Back Killaura
+Tabs.Combat:AddToggle("Killaura", {
+    Title = "Self-Back Killaura",
+    Default = false,
     Callback = function(Value)
-        if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
-            game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = Value
+        if Value then
+            loadstring(game:HttpGet(baseUrl .. "Modules/self-back-killaura.lua"))()
+        end
+    end
+})
+
+-- VISUALS: Hunter Vision
+Tabs.Visuals:AddToggle("HunterVision", {
+    Title = "Tronwurp Hunter Vision",
+    Default = false,
+    Callback = function(Value)
+        if Value then
+            loadstring(game:HttpGet(baseUrl .. "Modules/tronwurp-hunter-vision.lua"))()
+        end
+    end
+})
+
+-- SETTINGS: Event Logger
+Tabs.Settings:AddToggle("EventLogger", {
+    Title = "Event Logger",
+    Default = false,
+    Callback = function(Value)
+        if Value then
+            loadstring(game:HttpGet(baseUrl .. "Modules/event-logger.lua"))()
         end
     end
 })
@@ -71,8 +119,8 @@ Tabs.Home:AddSlider("WS", {
 -- Notification
 Fluent:Notify({
     Title = Config.BrandName .. " Loaded!",
-    Content = "The script is ready to use.",
-    Duration = 3
+    Content = "Welcome back, " .. Player.Name,
+    Duration = 5
 })
 
 Window:SelectTab(1)
