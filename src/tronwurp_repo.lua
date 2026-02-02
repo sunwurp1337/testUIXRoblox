@@ -1,8 +1,8 @@
 -- Run once to create local repo config
 local cfg = [[
 return {
-  User   = "YOUR_GITHUB_USER",
-  Repo   = "YOUR_REPO_NAME",
+  User   = "sunwurp1337",
+  Repo   = "testUIXRoblox",
   Branch = "main"
 }
 ]]
