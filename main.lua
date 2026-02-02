@@ -96,7 +96,7 @@ Tabs.Combat:AddToggle("Killaura", {
 
 -- VISUALS: Hunter Vision
 Tabs.Visuals:AddToggle("HunterVision", {
-    Title = "Tronwurp Hunter Vision",
+    Title = "Hunter Vision",
     Default = false,
     Callback = function(Value)
         if Value then
