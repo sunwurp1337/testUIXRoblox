@@ -5,7 +5,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local player = Players.LocalPlayer
 
 -- Configuration
-local RANGE = 50
 local ATTACK_SPEED = 1 
 local ATTACK_REMOTE = ReplicatedStorage:FindFirstChild("CharactersAttackRemote")
 
@@ -16,7 +15,8 @@ local lastAttackTime = 0
 local function GetNearestTarget()
     local nearest = nil
     -- Eğer _G.KillauraRange varsa onu kullan, yoksa varsayılan olarak 50 al:
-    local shortestDistance = _G.KillauraRange or RANGE
+    -- Eğer global değer yoksa varsayılan olarak 50 kullan:
+local shortestDistance = _G.KillauraRange or 50
     
     -- Optimized search
     for _, obj in pairs(workspace:GetDescendants()) do
