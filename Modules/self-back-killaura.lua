@@ -1,22 +1,17 @@
--- [[ TRONWURP SELF-BACK KILLAURA - OPTIMIZED ]]
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local player = Players.LocalPlayer
 
--- Configuration
-local RANGE = 50
 local ATTACK_SPEED = 0.25 
 local ATTACK_REMOTE = ReplicatedStorage:FindFirstChild("CharactersAttackRemote")
-
 local lastAttackTime = 0
 
--- 1. FIND NEAREST TARGET
 local function GetNearestTarget()
     local nearest = nil
-    local shortestDistance = RANGE
+    -- _G.KillauraRange kullanarak dinamik menzil alıyoruz
+    local shortestDistance = _G.KillauraRange or 50
     
-    -- Optimized search
     for _, obj in pairs(workspace:GetDescendants()) do
         if obj:IsA("Model") and obj ~= player.Character and obj:FindFirstChild("HumanoidRootPart") then
             local root = obj.HumanoidRootPart
@@ -30,47 +25,26 @@ local function GetNearestTarget()
     return nearest
 end
 
--- 2. KILL AURA LOOP
-local function StartAura()
-    -- Global connection to allow easy disconnection
-    if _G.KillauraConnection then _G.KillauraConnection:Disconnect() end
+if _G.KillauraConnection then _G.KillauraConnection:Disconnect() end
 
-    _G.KillauraConnection = RunService.RenderStepped:Connect(function()
-        if not _G.KillauraEnabled then 
-            _G.KillauraConnection:Disconnect()
-            _G.KillauraConnection = nil
-            return 
-        end
+_G.KillauraConnection = RunService.RenderStepped:Connect(function()
+    if not _G.KillauraEnabled then 
+        _G.KillauraConnection:Disconnect()
+        return 
+    end
 
-        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            local targetRoot = GetNearestTarget()
+    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        local targetRoot = GetNearestTarget()
+        if targetRoot then
+            local followPos = targetRoot.CFrame * CFrame.new(0, 1, 3)
+            player.Character.HumanoidRootPart.CFrame = CFrame.lookAt(followPos.p, targetRoot.Position)
             
-            if targetRoot then
-                -- POSITIONING: Behind the target
-                -- CFrame.new(0, 1, 3) -> 3 studs back, 1 stud up
-                local followPos = targetRoot.CFrame * CFrame.new(0, 1, 3)
-                player.Character.HumanoidRootPart.CFrame = CFrame.lookAt(followPos.p, targetRoot.Position)
-                
-                -- ATTACK TRIGGER
-                if tick() - lastAttackTime >= ATTACK_SPEED then
-                    if ATTACK_REMOTE then
-                        ATTACK_REMOTE:FireServer(targetRoot.Parent) 
-                        lastAttackTime = tick()
-                    end
+            if tick() - lastAttackTime >= ATTACK_SPEED then
+                if ATTACK_REMOTE then
+                    ATTACK_REMOTE:FireServer(targetRoot.Parent) 
+                    lastAttackTime = tick()
                 end
             end
         end
-    end)
-end
-
--- Run logic
-if _G.KillauraEnabled then
-    StartAura()
-end
-
-return function()
-    if _G.KillauraConnection then
-        _G.KillauraConnection:Disconnect()
-        _G.KillauraConnection = nil
     end
-end
+end)

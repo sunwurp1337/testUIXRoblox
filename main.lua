@@ -5,7 +5,7 @@ local Config = {
     Branch = "main",
     BrandName = "Tronwurp",
     BrandSuffix = "VIP",
-    Version = "1.0.5" -- Versiyon güncellendi
+    Version = "1.1.0"
 }
 
 local baseUrl = "https://raw.githubusercontent.com/" .. Config.GithubUser .. "/" .. Config.GithubRepo .. "/" .. Config.Branch .. "/"
@@ -23,11 +23,12 @@ local Window = Fluent:CreateWindow({
     SubTitle = "v" .. Config.Version .. " | by " .. Config.GithubUser,
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 460),
-    Acrylic = false,
+    Acrylic = false, -- Ekran ortasındaki blur hatası düzeltildi
     Theme = "Dark",
     MinimizeKey = Enum.KeyCode.LeftControl
 })
 
+-- [[ TABS ]]
 local Tabs = {
     Home = Window:AddTab({ Title = "Home", Icon = "home" }),
     Combat = Window:AddTab({ Title = "Combat", Icon = "swords" }),
@@ -35,7 +36,7 @@ local Tabs = {
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
 }
 
---- [[ HOME: PROFILE & PLAYING TIME ]] ---
+--- [[ HOME: PROFILE SECTION ]] ---
 local Player = game.Players.LocalPlayer
 local startTime = os.time()
 
@@ -44,8 +45,7 @@ Tabs.Home:AddParagraph({
     Content = "Username: " .. Player.Name .. "\nRank: " .. Config.BrandSuffix .. "\nStatus: Online"
 })
 
--- Playing Time Düzeltmesi
-local PlayTimeParagraph = Tabs.Home:AddParagraph({
+local PlayTimeLabel = Tabs.Home:AddParagraph({
     Title = "Session Stats",
     Content = "Playing Time: 00:00:00"
 })
@@ -56,119 +56,80 @@ task.spawn(function()
         local hours = math.floor(seconds / 3600)
         local minutes = math.floor((seconds % 3600) / 60)
         local secs = seconds % 60
-        local displayTime = string.format("%02d:%02d:%02d", hours, minutes, secs)
-        
-        -- Fluent kütüphanesinde paragraf güncelleme genellikle SetTitle veya SetDesc ile yapılır.
-        -- Eğer SetDesc çalışmazsa kütüphaneye göre 'Content' alanı güncellenir.
-        PlayTimeParagraph:SetDesc("Playing Time: " .. displayTime)
+        PlayTimeLabel:SetDesc("Playing Time: " .. string.format("%02d:%02d:%02d", hours, minutes, secs))
     end
 end)
 
---- [[ MODULES LOGIC ]] ---
--- Modülleri kapatmak için kullanılan tablo
-local RunningModules = {}
+--- [[ COMBAT SECTION: KILLAURA ]] ---
+_G.KillauraRange = 50 -- Default range
 
-local function HandleModule(name, url, state)
-    if state then
-        -- Modülü başlat
-        local scriptRaw = game:HttpGet(url)
-        local func, err = loadstring(scriptRaw)
-        if func then
-            RunningModules[name] = func() -- Modülün durdurma fonksiyonu döndürdüğünü varsayar
-            Fluent:Notify({Title = name, Content = "Activated", Duration = 2})
-        else
-            warn("Module Error: " .. err)
-        end
-    else
-        -- Modülü kapatma mantığı
-        -- Not: Modül dosyanızın içinde bir 'stop' mekanizması yoksa karakteri resetlemek en temiz yoldur.
-        Fluent:Notify({Title = name, Content = "Deactivated. Some effects may require reset.", Duration = 3})
-        RunningModules[name] = nil
-        
-        -- Eğer modül killaura veya ESP ise karakteri temizlemek gerekebilir:
-        if name == "Killaura" or name == "Hunter Vision" then
-             -- Buraya modüle özel kapatma kodları (örn: ESP:Destroy()) eklenmelidir.
-        end
-    end
-end
+Tabs.Combat:AddParagraph({
+    Title = "Killaura Module",
+    Content = "Automates attacks by teleporting you behind targets."
+})
 
--- Combat: Self Back KillAura
 local KillauraToggle = Tabs.Combat:AddToggle("Killaura", {
     Title = "Self-Back Killaura",
-    Description = "Teleports behind nearest target and attacks.",
+    Description = "Enable/Disable the automatic combat system.",
     Default = false,
     Callback = function(Value)
         _G.KillauraEnabled = Value
-        
         if Value then
             loadstring(game:HttpGet(baseUrl .. "Modules/self-back-killaura.lua"))()
-            Fluent:Notify({
-                Title = "Killaura",
-                Content = "System Activated!",
-                Duration = 2
-            })
+            Fluent:Notify({Title = "Killaura", Content = "Activated", Duration = 2})
         else
-            -- Disconnect logic handled inside module via global check
-            Fluent:Notify({
-                Title = "Killaura",
-                Content = "System Deactivated!",
-                Duration = 2
-            })
+            Fluent:Notify({Title = "Killaura", Content = "Deactivated", Duration = 2})
         end
     end
 })
 
-Tabs.Combat:AddKeybind("KillauraKeybind", {
+Tabs.Combat:AddKeybind("KillauraKey", {
     Title = "Killaura Hotkey",
-    Mode = "Toggle", -- Tuşa basınca durumu değiştirir
-    Default = "G", -- İstediğin varsayılan tuş
-
-    Callback = function(Value)
-        -- Toggle'ı tetikle (Bu otomatik olarak yukarıdaki Callback'i çalıştırır)
+    Mode = "Toggle",
+    Default = "G",
+    Callback = function()
         KillauraToggle:SetValue(not KillauraToggle.Value)
-    end,
-
-    ChangedCallback = function(NewCode)
-        print("Killaura keybind changed to:", NewCode)
     end
 })
 
--- VISUALS: Hunter Vision
+Tabs.Combat:AddSlider("KillauraRange", {
+    Title = "Attack Range",
+    Description = "Adjust how far the aura detects targets.",
+    Default = 50,
+    Min = 10,
+    Max = 200,
+    Rounding = 1,
+    Callback = function(Value)
+        _G.KillauraRange = Value
+    end
+})
+
+--- [[ VISUALS SECTION ]] ---
 Tabs.Visuals:AddToggle("HunterVision", {
     Title = "Hunter Vision",
+    Description = "Advanced ESP that detects hidden and invisible players.",
     Default = false,
     Callback = function(Value)
-        _G.HunterVisionEnabled = Value -- Loop kontrolü
-        
+        _G.HunterVisionEnabled = Value
         if Value then
-            loadstring(game:HttpGet(baseUrl .. "Modules/hunter-vision.lua"))()
-            Fluent:Notify({Title = "Visuals", Content = "Hunter Vision Enabled", Duration = 2})
-        else
-            -- Modül loopu _G.HunterVisionEnabled false olunca otomatik durur ve CleanESP çalışır.
-            Fluent:Notify({Title = "Visuals", Content = "Hunter Vision Disabled", Duration = 2})
+            loadstring(game:HttpGet(baseUrl .. "Modules/tronwurp-hunter-vision.lua"))()
         end
     end
 })
 
--- SETTINGS: Event Logger
+--- [[ SETTINGS SECTION ]] ---
 Tabs.Settings:AddToggle("EventLogger", {
     Title = "Event Logger",
+    Description = "Logs all RemoteEvent traffic to the console for debugging.",
     Default = false,
     Callback = function(Value)
         _G.EventLoggerEnabled = Value
-        
         if Value then
-            -- Eğer modül daha önce yüklenmemişse yükle
             if not _G.LoggerConnections then
                 loadstring(game:HttpGet(baseUrl .. "Modules/event-logger.lua"))()
             end
-            Fluent:Notify({Title = "Event Logger", Content = "Logging Started", Duration = 2})
         else
-            -- Kapatıldığında temizlik fonksiyonunu çağır
-            if _G.StopEventLogger then
-                _G.StopEventLogger()
-            end
-            Fluent:Notify({Title = "Event Logger", Content = "Logging Fully Disabled", Duration = 2})
+            if _G.StopEventLogger then _G.StopEventLogger() end
         end
     end
 })
