@@ -42,7 +42,7 @@ _G.KillauraConnection = RunService.RenderStepped:Connect(function()
         local targetRoot = GetNearestTarget()
         
         if targetRoot then
-            local followPos = targetRoot.CFrame * CFrame.new(0, 1, 7)
+            local followPos = targetRoot.CFrame * CFrame.new(0, 1, 15)
             player.Character.HumanoidRootPart.CFrame = CFrame.lookAt(followPos.p, targetRoot.Position)
             
             if tick() - lastAttackTime >= ATTACK_SPEED then
