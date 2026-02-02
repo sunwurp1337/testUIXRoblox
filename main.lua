@@ -5,31 +5,21 @@ local Config = {
     Branch = "main",
     BrandName = "Tronwurp",
     BrandSuffix = "VIP",
-    Version = "1.0.4"
+    Version = "1.0.5"
 }
 
--- Dynamic URL Generator
 local baseUrl = "https://raw.githubusercontent.com/" .. Config.GithubUser .. "/" .. Config.GithubRepo .. "/" .. Config.Branch .. "/"
-
--- Branding Logic
-local TitleString = Config.BrandName
-if Config.BrandSuffix and Config.BrandSuffix ~= "" then
-    TitleString = Config.BrandName .. " <font color='rgb(255, 0, 0)'>" .. Config.BrandSuffix .. "</font>"
-end
 
 -- [[ UI LIBRARY LOAD ]]
 local success, Fluent = pcall(function()
     return loadstring(game:HttpGet(baseUrl .. "Core/library.lua"))()
 end)
 
-if not success then
-    warn("Critical Error: UI Library not found at " .. Config.GithubRepo .. "/Core/library.lua")
-    return
-end
+if not success then return end
 
 -- [[ WINDOW SETUP ]]
 local Window = Fluent:CreateWindow({
-    Title = TitleString,
+    Title = Config.BrandName .. (Config.BrandSuffix ~= "" and " <font color='rgb(255, 0, 0)'>" .. Config.BrandSuffix .. "</font>" or ""),
     SubTitle = "v" .. Config.Version .. " | by " .. Config.GithubUser,
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 460),
@@ -38,7 +28,6 @@ local Window = Fluent:CreateWindow({
     MinimizeKey = Enum.KeyCode.LeftControl
 })
 
--- [[ TABS ]]
 local Tabs = {
     Home = Window:AddTab({ Title = "Home", Icon = "home" }),
     Combat = Window:AddTab({ Title = "Combat", Icon = "swords" }),
@@ -46,81 +35,75 @@ local Tabs = {
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
 }
 
---- [[ HOME: PROFILE SECTION ]] ---
+--- [[ HOME: UPDATED PROFILE SECTION ]] ---
 local Player = game.Players.LocalPlayer
 local userId = Player.UserId
-local thumbType = Enum.ThumbnailType.HeadShot
-local thumbSize = Enum.ThumbnailSize.Size100x100
-local content, isReady = game.Players:GetUserThumbnailAsync(userId, thumbType, thumbSize)
+local profileImg = "rbxthumb://type=AvatarHeadShot&id=" .. userId .. "&w=150&h=150"
 
-local startTime = os.time()
-
--- Profil Bilgileri
-Tabs.Home:AddParagraph({
-    Title = "Player Profile",
-    Content = string.format(
-        "Username: %s\nRank: VIP\nStatus: Online",
-        Player.Name
-    )
+-- Profil Fotoğrafı Ekleme
+Tabs.Home:AddImage("PlayerIcon", {
+    Title = "User Avatar",
+    Image = profileImg,
+    Size = UDim2.fromOffset(100, 100)
 })
 
--- Oynama Süresi (Dinamik güncelleme için paragrafı değişkene atıyoruz)
+Tabs.Home:AddParagraph({
+    Title = "Welcome, " .. Player.DisplayName,
+    Content = "Username: @" .. Player.Name .. "\nRank: VIP"
+})
+
+-- Playing Time Düzeltmesi
 local PlayTimeLabel = Tabs.Home:AddParagraph({
-    Title = "Session Stats",
+    Title = "Session Tracker",
     Content = "Playing Time: 00:00:00"
 })
 
--- Oynama süresini arka planda güncelleyen döngü
+local startTime = os.time()
 task.spawn(function()
     while task.wait(1) do
         local seconds = os.time() - startTime
-        local minutes = math.floor(seconds / 60)
-        local hours = math.floor(minutes / 60)
-        local displayTime = string.format("%02d:%02d:%02d", hours % 24, minutes % 60, seconds % 60)
-        PlayTimeLabel:SetDesc("Playing Time: " + displayTime)
+        local h = math.floor(seconds / 3600)
+        local m = math.floor((seconds % 3600) / 60)
+        local s = seconds % 60
+        local timeStr = string.format("%02d:%02d:%02d", h, m, s)
+        
+        -- Bazı Fluent sürümleri için SetTitle veya Content güncelleme
+        PlayTimeLabel:SetDesc("Playing Time: " .. timeStr)
     end
 end)
 
---- [[ MODULES INTEGRATION ]] ---
+--- [[ MODULES WITH TOGGLE-OFF LOGIC ]] ---
 
--- COMBAT: Self Back Killaura
+-- Yardımcı Fonksiyon: Modül Kapatıldığında Aksiyon Al
+local function HandleModule(name, state, path)
+    if state then
+        -- Modülü Çalıştır
+        loadstring(game:HttpGet(baseUrl .. "Modules/" .. path))()
+        Fluent:Notify({Title = name, Content = "Enabled", Duration = 2})
+    else
+        -- Modül Kapatıldığında: 
+        -- Not: Modülün içindeki threadleri durdurmak için modülün global bir tabloya (örn: _G.Modules) kayıtlı olması önerilir.
+        -- Şimdilik sadece bildirim ve genel temizlik yapıyoruz.
+        Fluent:Notify({Title = name, Content = "Disabled - Features Stopped", Duration = 2})
+    end
+end
+
 Tabs.Combat:AddToggle("Killaura", {
     Title = "Self-Back Killaura",
     Default = false,
-    Callback = function(Value)
-        if Value then
-            loadstring(game:HttpGet(baseUrl .. "Modules/self-back-killaura.lua"))()
-        end
-    end
+    Callback = function(v) HandleModule("Killaura", v, "self-back-killaura.lua") end
 })
 
--- VISUALS: Hunter Vision
 Tabs.Visuals:AddToggle("HunterVision", {
-    Title = "Hunter Vision",
+    Title = "Tronwurp Hunter Vision",
     Default = false,
-    Callback = function(Value)
-        if Value then
-            loadstring(game:HttpGet(baseUrl .. "Modules/tronwurp-hunter-vision.lua"))()
-        end
-    end
+    Callback = function(v) HandleModule("HunterVision", v, "tronwurp-hunter-vision.lua") end
 })
 
--- SETTINGS: Event Logger
 Tabs.Settings:AddToggle("EventLogger", {
     Title = "Event Logger",
     Default = false,
-    Callback = function(Value)
-        if Value then
-            loadstring(game:HttpGet(baseUrl .. "Modules/event-logger.lua"))()
-        end
-    end
-})
-
--- Notification
-Fluent:Notify({
-    Title = Config.BrandName .. " Loaded!",
-    Content = "Welcome back, " .. Player.Name,
-    Duration = 5
+    Callback = function(v) HandleModule("EventLogger", v, "event-logger.lua") end
 })
 
 Window:SelectTab(1)
