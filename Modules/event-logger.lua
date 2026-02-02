@@ -1,9 +1,15 @@
--- [[ REMOTE EVENT LOGGER MODULE ]]
+-- [[ REMOTE EVENT LOGGER - OPTIMIZED ]]
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local LogConnections = {}
 
--- Global kontrol değişkeni (Main script tarafından yönetilir)
-_G.EventLoggerEnabled = true
+-- Modülün birden fazla kez çalışmasını engellemek için kontrol
+if _G.LoggerConnections then
+    for _, conn in pairs(_G.LoggerConnections) do
+        if conn then conn:Disconnect() end
+    end
+    _G.LoggerConnections = {}
+end
+
+_G.LoggerConnections = {}
 
 local function StartLogging()
     -- 1. MONITOR INCOMING (Server -> Client)
@@ -11,44 +17,36 @@ local function StartLogging()
         if remote:IsA("RemoteEvent") then
             local connection = remote.OnClientEvent:Connect(function(...)
                 if _G.EventLoggerEnabled then
-                    print("📩 [INCOMING - FROM SERVER]: " .. remote.Name)
+                    print("📩 [INCOMING]: " .. remote.Name)
                     print("Data:", ...)
                 end
             end)
-            table.insert(LogConnections, connection)
+            table.insert(_G.LoggerConnections, connection)
         end
     end
 
-    -- 2. MONITOR OUTGOING (Client -> Server - Hooking)
-    -- This function allows you to log manual fires
+    -- 2. MONITOR OUTGOING (Hooking)
     _G.SafeFireServer = function(remote, ...)
         if _G.EventLoggerEnabled then
-            print("📤 [OUTGOING - TO SERVER]: " .. remote.Name)
+            print("📤 [OUTGOING]: " .. remote.Name)
             print("Data:", ...)
         end
         remote:FireServer(...)
     end
 end
 
-local function StopLogging()
+-- İlk çalıştırma
+StartLogging()
+
+-- Kapatma fonksiyonu
+_G.StopEventLogger = function()
     _G.EventLoggerEnabled = false
-    -- Disconnect all active events to save memory
-    for _, conn in pairs(LogConnections) do
-        if conn then conn:Disconnect() end
+    if _G.LoggerConnections then
+        for _, conn in pairs(_G.LoggerConnections) do
+            if conn then conn:Disconnect() end
+        end
+        _G.LoggerConnections = nil
     end
-    LogConnections = {}
     _G.SafeFireServer = nil
-    print("🚫 [EVENT LOGGER]: Module completely disabled and cleaned.")
+    print("🚫 [EVENT LOGGER]: All connections disconnected.")
 end
-
--- Toggle Mantığı
-if _G.EventLoggerEnabled then
-    StartLogging()
-else
-    StopLogging()
-end
-
--- Gerekirse manuel kapatma için fonksiyon döndür
-return {
-    Stop = StopLogging
-}

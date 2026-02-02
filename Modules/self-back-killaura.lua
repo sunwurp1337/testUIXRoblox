@@ -1,65 +1,76 @@
+-- [[ TRONWURP SELF-BACK KILLAURA - OPTIMIZED ]]
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local player = Players.LocalPlayer
 
--- AYARLAR
-local KILLAURA_AKTIF = false
-local MENZIL = 50
-local VURUS_HIZI = 0.25 -- Sunucu debounce'una takılmamak için 0.25 (saniyede 4 vuruş) idealdir
+-- Configuration
+local RANGE = 50
+local ATTACK_SPEED = 0.25 
 local ATTACK_REMOTE = ReplicatedStorage:FindFirstChild("CharactersAttackRemote")
 
-local sonVurusZamani = 0
+local lastAttackTime = 0
 
--- 1. EN YAKIN HEDEFI BULMA
-function enYakinDinozoruBul()
-    local enYakin = nil
-    local enKisaMesafe = MENZIL
+-- 1. FIND NEAREST TARGET
+local function GetNearestTarget()
+    local nearest = nil
+    local shortestDistance = RANGE
     
+    -- Optimized search
     for _, obj in pairs(workspace:GetDescendants()) do
         if obj:IsA("Model") and obj ~= player.Character and obj:FindFirstChild("HumanoidRootPart") then
             local root = obj.HumanoidRootPart
-            local mesafe = (player.Character.HumanoidRootPart.Position - root.Position).Magnitude
-            if mesafe < enKisaMesafe then
-                enKisaMesafe = mesafe
-                enYakin = root
+            local distance = (player.Character.HumanoidRootPart.Position - root.Position).Magnitude
+            if distance < shortestDistance then
+                shortestDistance = distance
+                nearest = root
             end
         end
     end
-    return enYakin
+    return nearest
 end
 
--- 2. ANA TAKİP VE MESAFELİ VURUŞ DÖNGÜSÜ
-RunService.RenderStepped:Connect(function()
-    if KILLAURA_AKTIF and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-        local hedefRoot = enYakinDinozoruBul()
-        
-        if hedefRoot then
-            -- ARKA MESAFE AYARI
-            -- CFrame.new(0, 1, 3) -> 0: Yatay sapma, 1: Yükseklik, 3: Arkaya doğru mesafe
-            -- Değeri (3), dinozorun büyüklüğüne göre 4 veya 5 yapabilirsin.
-            local takipPozisyonu = hedefRoot.CFrame * CFrame.new(0, 1, 3)
+-- 2. KILL AURA LOOP
+local function StartAura()
+    -- Global connection to allow easy disconnection
+    if _G.KillauraConnection then _G.KillauraConnection:Disconnect() end
+
+    _G.KillauraConnection = RunService.RenderStepped:Connect(function()
+        if not _G.KillauraEnabled then 
+            _G.KillauraConnection:Disconnect()
+            _G.KillauraConnection = nil
+            return 
+        end
+
+        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local targetRoot = GetNearestTarget()
             
-            -- Karakteri hedefin arkasına, hedefe bakacak şekilde konumlandırır
-            player.Character.HumanoidRootPart.CFrame = CFrame.lookAt(takipPozisyonu.p, hedefRoot.Position)
-            
-            -- SALDIRI TETİKLEME
-            if tick() - sonVurusZamani >= VURUS_HIZI then
-                if ATTACK_REMOTE then
-                    -- Önemli: Sunucu hedefi parametre olarak bekliyor olabilir
-                    ATTACK_REMOTE:FireServer(hedefRoot.Parent) 
-                    sonVurusZamani = tick()
+            if targetRoot then
+                -- POSITIONING: Behind the target
+                -- CFrame.new(0, 1, 3) -> 3 studs back, 1 stud up
+                local followPos = targetRoot.CFrame * CFrame.new(0, 1, 3)
+                player.Character.HumanoidRootPart.CFrame = CFrame.lookAt(followPos.p, targetRoot.Position)
+                
+                -- ATTACK TRIGGER
+                if tick() - lastAttackTime >= ATTACK_SPEED then
+                    if ATTACK_REMOTE then
+                        ATTACK_REMOTE:FireServer(targetRoot.Parent) 
+                        lastAttackTime = tick()
+                    end
                 end
             end
         end
-    end
-end)
+    end)
+end
 
--- "N" tuşu ile aç/kapat
-game:GetService("UserInputService").InputBegan:Connect(function(input, gpe)
-    if gpe then return end
-    if input.KeyCode == Enum.KeyCode.N then
-        KILLAURA_AKTIF = not KILLAURA_AKTIF
-        print("--- Menzilli Aura Durumu: " .. tostring(KILLAURA_AKTIF) .. " ---")
+-- Run logic
+if _G.KillauraEnabled then
+    StartAura()
+end
+
+return function()
+    if _G.KillauraConnection then
+        _G.KillauraConnection:Disconnect()
+        _G.KillauraConnection = nil
     end
-end)
+end

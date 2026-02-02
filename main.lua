@@ -23,7 +23,7 @@ local Window = Fluent:CreateWindow({
     SubTitle = "v" .. Config.Version .. " | by " .. Config.GithubUser,
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 460),
-    Acrylic = true, 
+    Acrylic = false,
     Theme = "Dark",
     MinimizeKey = Enum.KeyCode.LeftControl
 })
@@ -92,12 +92,44 @@ local function HandleModule(name, url, state)
     end
 end
 
--- COMBAT
-Tabs.Combat:AddToggle("Killaura", {
+-- Combat: Self Back KillAura
+local KillauraToggle = Tabs.Combat:AddToggle("Killaura", {
     Title = "Self-Back Killaura",
+    Description = "Teleports behind nearest target and attacks.",
     Default = false,
     Callback = function(Value)
-        HandleModule("Killaura", baseUrl .. "Modules/self-back-killaura.lua", Value)
+        _G.KillauraEnabled = Value
+        
+        if Value then
+            loadstring(game:HttpGet(baseUrl .. "Modules/self-back-killaura.lua"))()
+            Fluent:Notify({
+                Title = "Killaura",
+                Content = "System Activated!",
+                Duration = 2
+            })
+        else
+            -- Disconnect logic handled inside module via global check
+            Fluent:Notify({
+                Title = "Killaura",
+                Content = "System Deactivated!",
+                Duration = 2
+            })
+        end
+    end
+})
+
+Tabs.Combat:AddKeybind("KillauraKeybind", {
+    Title = "Killaura Hotkey",
+    Mode = "Toggle", -- Tuşa basınca durumu değiştirir
+    Default = "G", -- İstediğin varsayılan tuş
+
+    Callback = function(Value)
+        -- Toggle'ı tetikle (Bu otomatik olarak yukarıdaki Callback'i çalıştırır)
+        KillauraToggle:SetValue(not KillauraToggle.Value)
+    end,
+
+    ChangedCallback = function(NewCode)
+        print("Killaura keybind changed to:", NewCode)
     end
 })
 
@@ -118,12 +150,26 @@ Tabs.Visuals:AddToggle("HunterVision", {
     end
 })
 
--- SETTINGS
+-- SETTINGS: Event Logger
 Tabs.Settings:AddToggle("EventLogger", {
     Title = "Event Logger",
     Default = false,
     Callback = function(Value)
-        HandleModule("Event Logger", baseUrl .. "Modules/event-logger.lua", Value)
+        _G.EventLoggerEnabled = Value
+        
+        if Value then
+            -- Eğer modül daha önce yüklenmemişse yükle
+            if not _G.LoggerConnections then
+                loadstring(game:HttpGet(baseUrl .. "Modules/event-logger.lua"))()
+            end
+            Fluent:Notify({Title = "Event Logger", Content = "Logging Started", Duration = 2})
+        else
+            -- Kapatıldığında temizlik fonksiyonunu çağır
+            if _G.StopEventLogger then
+                _G.StopEventLogger()
+            end
+            Fluent:Notify({Title = "Event Logger", Content = "Logging Fully Disabled", Duration = 2})
+        end
     end
 })
 
