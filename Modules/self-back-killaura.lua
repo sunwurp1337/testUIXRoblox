@@ -4,19 +4,22 @@ local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local player = Players.LocalPlayer
 
-local ATTACK_SPEED = 0.25 -- Hızı eskisi gibi 0.25 yapıyorum
+local ATTACK_SPEED = 0.25 
 local ATTACK_REMOTE = ReplicatedStorage:FindFirstChild("CharactersAttackRemote")
 local lastAttackTime = 0
 
 local function GetNearestTarget()
     local nearest = nil
-    -- HATA BURADAYDI: _G.KillauraRange eğer nil ise varsayılan 50 kullan diyoruz
+    
+    -- ÖNCELİK SIRASI: 1. Global Slider Değeri | 2. Varsayılan 50
     local shortestDistance = _G.KillauraRange or 50 
     
     for _, obj in pairs(workspace:GetDescendants()) do
         if obj:IsA("Model") and obj ~= player.Character and obj:FindFirstChild("HumanoidRootPart") then
             local root = obj.HumanoidRootPart
             local distance = (player.Character.HumanoidRootPart.Position - root.Position).Magnitude
+            
+            -- Mesafe kontrolü
             if distance < shortestDistance then
                 shortestDistance = distance
                 nearest = root

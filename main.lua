@@ -60,7 +60,7 @@ task.spawn(function()
 end)
 
 -- [[ COMBAT: KILLAURA ]]
-_G.KillauraRange = 50 -- Slider'dan önce tanımlıyoruz ki boş kalmasın
+_G.KillauraRange = 50 -- KESİN BAŞLANGIÇ DEĞERİ (Algılama sorunu için)
 
 local KillauraToggle = Tabs.Combat:AddToggle("Killaura", {
     Title = "Self-Back Killaura",
@@ -88,16 +88,16 @@ Tabs.Combat:AddKeybind("KillauraKeybind", {
     end
 })
 
--- Menzil Ayarı (Slider'ın Callback kısmına dikkat)
+-- Menzil Ayarı (Max 500 yapıldı)
 Tabs.Combat:AddSlider("KillauraRange", {
     Title = "Killaura Range",
     Description = "Adjust target detection distance.",
     Default = 50,
     Min = 10,
-    Max = 200,
+    Max = 500, -- 500'e çıkarıldı
     Rounding = 1,
     Callback = function(Value)
-        _G.KillauraRange = Value -- Slider oynatıldığında global değeri günceller
+        _G.KillauraRange = Value
     end
 })
 
