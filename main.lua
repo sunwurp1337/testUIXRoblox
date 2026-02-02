@@ -147,7 +147,7 @@ Tabs.Settings:AddToggle("EventLogger", {
 })
 
 -- [[ UNLOAD SYSTEM: X TUŞUNA BASILDIĞINDA ÇALIŞIR ]]
-Window:OnChain(function()
+Window:Destroy(function()
     -- UI Kütüphanesine bağlı olarak 'Destroy' veya 'Unload' event'i
     -- Tüm global modülleri durdur
     UI_Active = false
