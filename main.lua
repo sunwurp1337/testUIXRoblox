@@ -88,18 +88,22 @@ Tabs.Combat:AddKeybind("KillauraKeybind", {
     end
 })
 
--- Menzil Ayarı (Max 500 yapıldı)
-Tabs.Combat:AddSlider("KillauraRange", {
+local RangeSlider = Tabs.Combat:AddSlider("KillauraRange", {
     Title = "Killaura Range",
     Description = "Adjust target detection distance.",
     Default = 50,
     Min = 10,
-    Max = 500, -- 500'e çıkarıldı
+    Max = 500,
     Rounding = 1,
     Callback = function(Value)
         _G.KillauraRange = Value
     end
 })
+
+RangeSlider:OnChanged(function(Value)
+    _G.KillauraRange = Value
+end)
+RangeSlider:SetValue(50) -- Bu satır Callback'i zorla çalıştırır
 
 --- [[ VISUALS: HUNTER VISION ]] ---
 Tabs.Visuals:AddToggle("HunterVision", {
