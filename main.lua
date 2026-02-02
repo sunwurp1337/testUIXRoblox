@@ -5,7 +5,7 @@ local Config = {
     Branch = "main",
     BrandName = "Tronwurp",
     BrandSuffix = "VIP",
-    Version = "1.1.2"
+    Version = "1.1.0"
 }
 
 local baseUrl = "https://raw.githubusercontent.com/" .. Config.GithubUser .. "/" .. Config.GithubRepo .. "/" .. Config.Branch .. "/"
@@ -35,41 +35,6 @@ local Tabs = {
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
 }
 
---- [[ CLEANUP LOGIC (X TUŞU İÇİN) ]] ---
-local function FullyUnload()
-    -- Tüm Global Flagleri kapat (Döngüleri durdurur)
-    _G.KillauraEnabled = false
-    _G.GodModeEnabled = false
-    _G.HunterVisionEnabled = false
-    _G.EventLoggerEnabled = false
-    
-    -- Modüllere özel temizlik fonksiyonlarını çağır
-    if _G.StopEventLogger then _G.StopEventLogger() end
-    
-    -- Killaura ve God Mode bağlantılarını kopar
-    if _G.KillauraConnection then _G.KillauraConnection:Disconnect() end
-    if _G.GodModeConnection then _G.GodModeConnection:Disconnect() end
-    if _G.GodModeLoop then _G.GodModeLoop:Disconnect() end
-    
-    -- ESP ve Nametagleri temizle (Hunter Vision için)
-    -- Not: hunter-vision.lua içinde CleanESP fonksiyonun varsa onu tetikler
-    pcall(function()
-        for _, p in pairs(game.Players:GetPlayers()) do
-            if p.Character then
-                if p.Character:FindFirstChild("HunterHL") then p.Character.HunterHL:Destroy() end
-                if p.Character:FindFirstChild("HunterTag") then p.Character.HunterTag:Destroy() end
-            end
-        end
-    end)
-
-    print("⚠️ " .. Config.BrandName .. " Unloaded. All modules disabled.")
-end
-
--- Fluent X tuşuna basıldığında bu fonksiyonu tetikler
-Window:OnUnload(function()
-    FullyUnload()
-end)
-
 --- [[ HOME SECTION ]] ---
 local Player = game.Players.LocalPlayer
 local startTime = os.time()
@@ -86,9 +51,6 @@ local PlayTimeParagraph = Tabs.Home:AddParagraph({
 
 task.spawn(function()
     while task.wait(1) do
-        -- UI kapandığında bu döngüyü de durdurmak için kontrol
-        if not game:GetService("CoreGui"):FindFirstChild(Window.Title) and not _G.KillauraEnabled then break end
-        
         local seconds = os.time() - startTime
         local hours = math.floor(seconds / 3600)
         local minutes = math.floor((seconds % 3600) / 60)
@@ -98,7 +60,7 @@ task.spawn(function()
 end)
 
 -- [[ COMBAT: KILLAURA ]]
-_G.KillauraRange = 0
+_G.KillauraRange = 0 -- Başlangıç değeri 0
 
 local KillauraToggle = Tabs.Combat:AddToggle("Killaura", {
     Title = "Self-Back Killaura",
@@ -129,7 +91,7 @@ Tabs.Combat:AddKeybind("KillauraKeybind", {
 local RangeSlider = Tabs.Combat:AddSlider("KillauraRange", {
     Title = "Killaura Range",
     Description = "Adjust target detection distance.",
-    Default = 0,
+    Default = 0, -- Başlangıç 0
     Min = 0,
     Max = 500,
     Rounding = 1,
@@ -137,11 +99,10 @@ local RangeSlider = Tabs.Combat:AddSlider("KillauraRange", {
         _G.KillauraRange = Value
     end
 })
-RangeSlider:SetValue(0)
 
 -- [[ COMBAT: GOD MODE ]]
 Tabs.Combat:AddToggle("GodMode", {
-    Title = "God Mode (Advanced)",
+    Title = "God Mode (Beta)",
     Description = "Attempts to bypass damage and prevent death.",
     Default = false,
     Callback = function(Value)
@@ -158,7 +119,7 @@ Tabs.Combat:AddToggle("GodMode", {
 --- [[ VISUALS: HUNTER VISION ]] ---
 Tabs.Visuals:AddToggle("HunterVision", {
     Title = "Hunter Vision",
-    Description = "Advanced ESP and hidden player detection.",
+    Description = "ESP and invisibility detection.",
     Default = false,
     Callback = function(Value)
         _G.HunterVisionEnabled = Value
@@ -171,7 +132,7 @@ Tabs.Visuals:AddToggle("HunterVision", {
 --- [[ SETTINGS: EVENT LOGGER ]] ---
 Tabs.Settings:AddToggle("EventLogger", {
     Title = "Event Logger",
-    Description = "Logs remote events to console for debugging.",
+    Description = "Logs remote events to console.",
     Default = false,
     Callback = function(Value)
         _G.EventLoggerEnabled = Value
@@ -184,5 +145,26 @@ Tabs.Settings:AddToggle("EventLogger", {
         end
     end
 })
+
+-- [[ UNLOAD SYSTEM: X TUŞUNA BASILDIĞINDA ÇALIŞIR ]]
+Window:OnChain(function()
+    -- UI Kütüphanesine bağlı olarak 'Destroy' veya 'Unload' event'i
+    -- Tüm global modülleri durdur
+    UI_Active = false
+    _G.KillauraEnabled = false
+    _G.GodModeEnabled = false
+    _G.HunterVisionEnabled = false
+    _G.EventLoggerEnabled = false
+    
+    -- Varsa temizleme fonksiyonlarını çağır
+    if _G.StopEventLogger then _G.StopEventLogger() end
+    
+    -- Bağlantıları (Connections) temizle
+    if _G.KillauraConnection then _G.KillauraConnection:Disconnect() end
+    if _G.GodModeConnection then _G.GodModeConnection:Disconnect() end
+    
+    -- Konsola bilgi ver
+    print("⚠️ " .. Config.BrandName .. " Unloaded. All modules disabled.")
+end)
 
 Window:SelectTab(1)
