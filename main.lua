@@ -40,17 +40,21 @@ local Window = Fluent:CreateWindow({
 
 -- [[ TABS AND FEATURES ]]
 local Tabs = {
-    Main = Window:AddTab({ Title = "Main Menu", Icon = "home" }),
+    -- İstediğin Tab Değişiklikleri Buradadır:
+    Home = Window:AddTab({ Title = "Home", Icon = "home" }),
+    Combat = Window:AddTab({ Title = "Combat", Icon = "swords" }),
+    Visuals = Window:AddTab({ Title = "Visuals", Icon = "eye" }),
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
 }
 
-Tabs.Main:AddParagraph({
+-- Home Tab İçeriği
+Tabs.Home:AddParagraph({
     Title = "System Status: Active",
     Content = "Files successfully pulled from " .. Config.GithubUser .. "'s repository."
 })
 
--- WalkSpeed Feature
-Tabs.Main:AddSlider("WS", {
+-- Örnek: WalkSpeed Feature (Artık Home tabında)
+Tabs.Home:AddSlider("WS", {
     Title = "Walk Speed",
     Description = "Adjust your character's movement speed.",
     Default = 16,
