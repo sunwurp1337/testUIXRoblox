@@ -86,7 +86,7 @@ _G.KillauraConnection = RunService.RenderStepped:Connect(function()
 
         if targetRoot then
 
-            local followPos = targetRoot.CFrame * CFrame.new(0, 1, 15)
+            local followPos = targetRoot.CFrame * CFrame.new(0, 1, 25)
 
             player.Character.HumanoidRootPart.CFrame = CFrame.lookAt(followPos.p, targetRoot.Position)
 
